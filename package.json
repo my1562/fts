@@ -1,0 +1,36 @@
+{
+    "name": "@my1562/fts",
+    "version": "0.0.1",
+    "license": "MIT",
+    "main": "lib/index.js",
+    "types": "lib/index.d.ts",
+    "files": [
+        "lib"
+    ],
+    "scripts": {
+        "build": "npm run build:types && npm run build:js",
+        "build:js": "babel src --out-dir lib --extensions \".ts,.tsx\" --source-maps inline",
+        "build:types": "tsc --emitDeclarationOnly",
+        "prepublish": "npm run build",
+        "test": "jest",
+        "type-check": "tsc --noEmit",
+        "type-check:watch": "npm run type-check -- --watch"
+    },
+    "dependencies": {
+        "damerau-levenshtein": "^1.0.6",
+        "lodash": "^4.17.19"
+    },
+    "devDependencies": {
+        "@babel/cli": "^7.8.3",
+        "@babel/core": "^7.8.3",
+        "@babel/plugin-proposal-class-properties": "^7.8.3",
+        "@babel/preset-env": "^7.8.3",
+        "@babel/preset-typescript": "^7.8.3",
+        "@types/jest": "^25.2.3",
+        "@types/lodash": "^4.14.159",
+        "core-js": "3",
+        "jest": "^26.0.1",
+        "prettier": "^2.0.5",
+        "typescript": "^3.7.5"
+    }
+}
