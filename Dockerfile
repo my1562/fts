@@ -5,5 +5,6 @@ COPY ["package.json", "package-lock.json", "tsconfig.json", "./"]
 RUN npm ci --prduction --silent && mv node_modules ../
 COPY lib ./lib
 COPY data ./data
-
-CMD DEBUG=fts npm run start
+ENV DEBUG=fts
+ENV PATH="/usr/src/node_modules/.bin:${PATH}"
+CMD npm run start
