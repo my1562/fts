@@ -1,10 +1,18 @@
 import { prepare } from '.';
 
-export class TokenStore {
-    private tokenById: string[] = [];
-    private idByToken: { [token: string]: number } = {};
+export type IDByToken = { [token: string]: number };
+export type TokenByID = string[];
 
-    constructor() {}
+export interface TokenStoreExportedData {
+    tokenById: TokenByID;
+    idByToken: IDByToken;
+}
+
+export class TokenStore {
+    constructor(
+        private tokenById: TokenByID = [],
+        private idByToken: IDByToken = {}
+    ) {}
 
     private getOrCreateTokenID(token: string): number {
         const maybeID = this.idByToken[token];
@@ -16,6 +24,7 @@ export class TokenStore {
         this.tokenById.push(token);
         return id;
     }
+
     private getTokenID(token: string): number | undefined {
         return this.idByToken[token];
     }
@@ -34,5 +43,16 @@ export class TokenStore {
 
     getTokenById(tokenID: number): string | undefined {
         return this.tokenById[tokenID];
+    }
+
+    exportData(): TokenStoreExportedData {
+        return {
+            tokenById: this.tokenById,
+            idByToken: this.idByToken,
+        };
+    }
+    importData(data: TokenStoreExportedData) {
+        this.tokenById = data.tokenById;
+        this.idByToken = data.idByToken;
     }
 }

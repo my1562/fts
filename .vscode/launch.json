@@ -18,12 +18,24 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Launch Program",
+            "name": "Experiment #1",
             "skipFiles": ["<node_internals>/**"],
             "program": "${workspaceFolder}/lib/experiments/fts.js",
             "outFiles": ["${workspaceFolder}/**/*.js"],
             "preLaunchTask": "npm: build",
-            "console": "integratedTerminal"
+            "console": "integratedTerminal",
+            "env": { "DEBUG": "fts" }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Build Index",
+            "skipFiles": ["<node_internals>/**"],
+            "program": "${workspaceFolder}/lib/scripts/buildIndex.js",
+            "outFiles": ["${workspaceFolder}/**/*.js"],
+            "preLaunchTask": "npm: build",
+            "console": "integratedTerminal",
+            "env": { "DEBUG": "fts" }
         }
     ]
 }

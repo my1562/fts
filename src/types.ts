@@ -6,6 +6,7 @@ export interface StreetAR {
     typeUKR: string;
     shortTypeRU: string;
     shortTypeUKR: string;
+    Children: StreetAR[];
 }
 
 export interface Address {
