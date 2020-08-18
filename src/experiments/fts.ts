@@ -1,7 +1,6 @@
 import { FullTextIndex } from '../FullTextIndex';
 import { loadJSON, logTimeSync } from '../utils';
 import { StreetAR, Address } from '../types';
-import { AddressFormatter } from './utils/AddressFormatter';
 
 const searches = [
     'ленина 16',
@@ -28,41 +27,27 @@ const createAndBuild = async () => {
 
     const index = new FullTextIndex(streets, addresses);
     await index.initialize();
-    const formatter = new AddressFormatter(streets, addresses);
-    return { formatter, index };
+    return index;
 };
 
 const createAndImport = async () => {
-    const streets = await loadJSON<{ [id: string]: StreetAR }>(
-        `${__dirname}/../../../my1562normalizer/data/streetsAR.json`
-    );
-    const addresses = await loadJSON<{ [id: string]: Address }>(
-        `${__dirname}/../../../my1562normalizer/data/addresses.json`
-    );
-
     const index = new FullTextIndex();
     index.importData(await loadJSON(`${__dirname}/../../data/fts-index.json`));
 
-    const formatter = new AddressFormatter(streets, addresses);
-
-    return { formatter, index };
+    return index;
 };
 
 const main = async () => {
-    const { index, formatter } = await createAndImport();
+    const index = await createAndImport();
 
     for (const query of searches) {
         console.log('>>>>', query, ':');
-        logTimeSync(() => {
-            const addresses = index
-                .search(query)
-                .map(({ addressID, similarity }) => [
-                    similarity,
-                    formatter.addressIDToString(addressID),
-                ]);
 
-            console.log(addresses);
+        const addresses = logTimeSync(() => {
+            return index.search(query);
         }, `search(${query})`);
+
+        console.log(addresses);
     }
 };
 

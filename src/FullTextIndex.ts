@@ -28,11 +28,20 @@ export type DecommunizationMap = {
     //Old street IDs
     [newStreetID: string]: number[];
 };
+export type AddressStringsByID = {
+    [addressID: string]: string;
+};
+export interface SearchResult {
+    similarity: number;
+    id: number;
+    label: string;
+}
 
 export interface FullTextIndexExportedData {
     addressIDsByTokenID: AddressIDsByTokenID;
     tokenizedVariantsByAddressID: TokenizedVariantsByAddressID;
     addressIDsByStreetID: AddressIDsByStreetID;
+    addressStringsByID: AddressStringsByID;
     tokens: TokenStoreExportedData;
 }
 
@@ -42,6 +51,7 @@ export class FullTextIndex {
     private addressIDsByTokenID: AddressIDsByTokenID = {};
     private tokenizedVariantsByAddressID: TokenizedVariantsByAddressID = {};
     private decommunizationMap: DecommunizationMap = {};
+    private addressStringsByID: AddressStringsByID = {};
     private readonly tokens: TokenStore = new TokenStore();
 
     constructor(
@@ -209,10 +219,27 @@ export class FullTextIndex {
             this.addressesByID
         );
         this.decommunizationMap = this.getDecommunizationMap(this.streetsById);
+        this.addressStringsByID = this.getAddressStringsByID();
         logTimeSync(() => {
             this.buildSearchIndex();
         }, 'buildSearchIndex');
         this.isInitialized = true;
+    }
+
+    private getAddressStringsByID(): AddressStringsByID {
+        const result: AddressStringsByID = {};
+        for (const address of Object.values(this.addressesByID)) {
+            const street = this.streetsById[address.streetID];
+            if (!street) {
+                throw new Error(
+                    `Street ${address.streetID} not found for address ${address.id}`
+                );
+            }
+            const streetName = `${street.typeRU} ${street.name_ru}`;
+            const building = getBuildingAsStr(address);
+            result[address.id] = `${streetName} ${building}`;
+        }
+        return result;
     }
 
     public importData(data: FullTextIndexExportedData): void {
@@ -222,6 +249,7 @@ export class FullTextIndex {
         const {
             addressIDsByStreetID,
             addressIDsByTokenID,
+            addressStringsByID,
             tokenizedVariantsByAddressID,
             tokens,
         } = data;
@@ -229,6 +257,7 @@ export class FullTextIndex {
         this.addressIDsByStreetID = addressIDsByStreetID;
         this.addressIDsByTokenID = addressIDsByTokenID;
         this.tokenizedVariantsByAddressID = tokenizedVariantsByAddressID;
+        this.addressStringsByID = addressStringsByID;
         this.tokens.importData(tokens);
     }
 
@@ -237,14 +266,20 @@ export class FullTextIndex {
             addressIDsByTokenID: this.addressIDsByTokenID,
             tokenizedVariantsByAddressID: this.tokenizedVariantsByAddressID,
             addressIDsByStreetID: this.addressIDsByStreetID,
+            addressStringsByID: this.addressStringsByID,
             tokens: this.tokens.exportData(),
         };
     }
 
-    public search(
-        query: string,
-        limit: number = 10
-    ): { similarity: number; addressID: number }[] {
+    public addressIDToString(addrID: number): string {
+        const addressString = this.addressStringsByID[addrID];
+        if (!addressString) {
+            throw new Error(`Address ${addrID} not found`);
+        }
+        return addressString;
+    }
+
+    public search(query: string, limit: number = 10): SearchResult[] {
         const queryTokenIDs = this.tokens.tokenizeText(query);
         const addressCandidates = _(this.addressIDsByTokenID)
             .pick(queryTokenIDs)
@@ -269,8 +304,9 @@ export class FullTextIndex {
                 ]
             )
             .map(([addressID, similarity]) => ({
-                addressID,
-                similarity,
+                id: addressID,
+                similarity: Math.round(similarity * 1000) / 1000,
+                label: this.addressIDToString(addressID),
             }))
             .orderBy(['similarity'], ['desc'])
             .slice(0, limit)
